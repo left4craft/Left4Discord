@@ -43,6 +43,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPubSub;
 
 public class Main {
+	private static String WEBHOOK_URL;
 	private static Connection connection;
 	private static DiscordApi api;
 	private static HashMap<String, Role> roles;
@@ -74,6 +75,7 @@ public class Main {
 			Scanner tokenReader = new Scanner(new File("token.txt"));
 			if(tokenReader.hasNextLine()) {
 				TOKEN = tokenReader.nextLine();
+				WEBHOOK_URL = tokenReader.nextLine();
 			} else {
 				System.out.println("token.txt is empty!");
 			}
@@ -433,7 +435,7 @@ public class Main {
 							String avatar = "https://crafatar.com/avatars/" + parts[1];
 							try {
 								Unirest.post(
-										"https://discordapp.com/api/webhooks/548478709510832158/csGEUrDtqcUt5PTEO8IBcjznFe4CI8C-3bOjetkX01qQogeKI78vde0epj0YgJ3wxEtn")
+										WEBHOOK_URL)
 										.field("username", name).field("avatar_url", avatar).field("content", content)
 										.asJson();
 							} catch (UnirestException e) {
