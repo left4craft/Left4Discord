@@ -35,11 +35,13 @@ public class PunishmentEmbed implements Runnable {
 
 	@Override
 	public void run() {
+		//System.out.println("[DEBUG] RUNNING PUNISHMENTEMBED");
 		try {
 			PreparedStatement statement = conn.prepareStatement("SELECT HEX(UUID) FROM discord_users WHERE discordID= ?");
 			statement.setLong(1, id);
 			ResultSet r = statement.executeQuery();
 			if (r.next()) {
+				//System.out.println("[DEBUG] Found uuid for " + id);
 				String uuid = r.getString(1);
 				uuid = uuid.toLowerCase();
 				uuid = new StringBuilder(uuid).insert(8, '-').insert(13, '-').insert(18, '-').insert(23, '-').toString();

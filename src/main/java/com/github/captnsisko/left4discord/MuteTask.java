@@ -10,8 +10,10 @@ import java.util.HashSet;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TimerTask;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.user.User;
 
@@ -54,13 +56,19 @@ public class MuteTask extends TimerTask {
 						if(Main.mute(u)) {
 							EmbedBuilder embed = new EmbedBuilder();
 							embed.setAuthor(u);
-							embed.addField("Muted", u.getMentionTag() + ", you have been muted on Discord because you were muted or banned in-game. "
+							embed.addField("Muted", u.getNicknameMentionTag() + ", you have been muted on Discord because you were muted or banned in-game. "
 									+ "This is the only channel in which you are permitted to speak. "
 									+ "After you are unmuted or unbanned, it may take up to 5 minutes for your Discord role to update.");
-							embed.addField("Reason", "Use \"!lookup " + u.getMentionTag() + "\" to see your punishment reason and history.");
+							embed.addField("Reason", "Use \"!lookup " + u.getNicknameMentionTag() + "\" to see your punishment reason and history.");
+							embed.addField("Appeal", "Depending on your offense, you may be able to appeal your punishment at https://left4.cf/appeal");
 							embed.setColor(new Color(200, 0, 0));
 							embed.setFooter(Main.FOOTER_TEXT);
 							Main.getAPI().getChannelById(Main.MUTEDCHANNEL).get().asServerTextChannel().get().sendMessage(embed);
+							CompletableFuture<Message> m = Main.getAPI().getChannelById(Main.MUTEDCHANNEL).get().asServerTextChannel().get().sendMessage(u.getNicknameMentionTag() + "'s Punishment History:");
+							new PunishmentEmbed(Main.getSQL(),
+								m,
+								id,
+								u.getDisplayName(Main.getAPI().getServerById(Main.SERVER).get())).run();
 						}
 					} catch (NoSuchElementException e) {
 						//System.out.println("Could not find muted user " + id + ", they may have left the server.");
@@ -74,7 +82,7 @@ public class MuteTask extends TimerTask {
 						Main.unmute(u);
 						EmbedBuilder embed = new EmbedBuilder();
 						embed.setAuthor(u);
-						embed.addField("Unmuted", u.getMentionTag() + ", you have been unmuted because your in-game punishment expired. "
+						embed.addField("Unmuted", u.getNicknameMentionTag() + ", you have been unmuted because your in-game punishment expired. "
 								+ "Please ensure you read and follow the rules to avoid this in the future. "
 								+ "Your Discord role has been removed for now. It will be updated when you reconnect to the server.");
 						embed.setColor(new Color(76, 175, 80));

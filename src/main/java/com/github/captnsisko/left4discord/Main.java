@@ -93,6 +93,16 @@ public class Main {
 				System.out.println("sql.txt is empty!");
 			}
 			sqlReader.close();
+
+			Scanner webhookReader = new Scanner(new File("webhook.txt"));
+			
+			if(webhookReader.hasNextLine()) {
+				WEBHOOK_URL = webhookReader.nextLine();
+				System.out.println(WEBHOOK_URL);
+			} else {
+				System.out.println("webhook.txt is empty!");
+			}
+			webhookReader.close();
 		} catch (FileNotFoundException e) {
 			System.out.println("Could not find token.txt! Is it in the same directory as this jar file?");
 		}
