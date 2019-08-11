@@ -12,6 +12,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -382,11 +383,32 @@ public class Main {
 		}
 		System.out.println("Got roles: " + roles.toString());
 
+
+
 		Timer t = new Timer();
 		t.scheduleAtFixedRate(new ExpireTask(api), 0, 60000l);
 		t.scheduleAtFixedRate(new KeepAliveTask(connection), 0, 600000l);
 		t.scheduleAtFixedRate(new MuteTask(), 0, 300000l);
 		System.out.println("Enabled expired key remover");
+
+		String unlinkedUsers = "";
+		System.out.println("Finding unlinked users...");
+		Collection<User> members = api.getServerById(SERVER).get().getMembers();
+		for (User u : members) {
+			Server server = api.getServerById(SERVER).get();
+			if(u.getRoles(server).size() > 1) {
+				try {
+					PreparedStatement sta = connection.prepareStatement("SELECT * FROM discord_users WHERE discordID=?");
+					sta.setLong(1, u.getId());
+					if(!sta.executeQuery().next()) {
+						unlinkedUsers += u.getDisplayName(server) + "\n";
+					}
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		System.out.println(unlinkedUsers);
 
 		// });
 
@@ -444,10 +466,8 @@ public class Main {
 							content = content.replaceAll("(?i)@here", "@_here");
 							String avatar = "https://crafatar.com/avatars/" + parts[1];
 							try {
-								Unirest.post(
-										WEBHOOK_URL)
-										.field("username", name).field("avatar_url", avatar).field("content", content)
-										.asJson();
+								Unirest.post(WEBHOOK_URL).field("username", name).field("avatar_url", avatar)
+										.field("content", content).asJson();
 							} catch (UnirestException e) {
 								e.printStackTrace();
 							}
