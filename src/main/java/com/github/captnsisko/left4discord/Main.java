@@ -25,6 +25,7 @@ import org.javacord.api.entity.permission.Role;
 import org.javacord.api.entity.server.Server;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.DiscordApiBuilder;
+import org.javacord.api.entity.activity.ActivityType;
 import org.javacord.api.entity.channel.Channel;
 //import org.javacord.api.entity.channel.ServerVoiceChannel;
 import org.javacord.api.entity.channel.TextChannel;
@@ -59,7 +60,7 @@ public class Main {
 	public static final long MUTEDCHANNEL = 587122816797769788l;
 	public static final long MUTEDROLE = 587112191950585856l;
 
-	public static final String FOOTER_TEXT = "Left4Chat 2.3 | Written by Captain_Sisko";
+	public static final String FOOTER_TEXT = "Left4Chat 2.4 | Written by Captain_Sisko";
 
 	public static ArrayList<Long> triviaUsers;
 
@@ -74,7 +75,7 @@ public class Main {
 		System.out.println("Reading config files...");
 		try {
 			Scanner tokenReader = new Scanner(new File("token.txt"));
-			if(tokenReader.hasNextLine()) {
+			if (tokenReader.hasNextLine()) {
 				TOKEN = tokenReader.nextLine();
 				WEBHOOK_URL = tokenReader.nextLine();
 			} else {
@@ -83,8 +84,8 @@ public class Main {
 			tokenReader.close();
 
 			Scanner sqlReader = new Scanner(new File("sql.txt"));
-			
-			if(sqlReader.hasNextLine()) {
+
+			if (sqlReader.hasNextLine()) {
 				host = sqlReader.nextLine().split("=")[1];
 				database = sqlReader.nextLine().split("=")[1];
 				port = sqlReader.nextLine().split("=")[1];
@@ -96,8 +97,8 @@ public class Main {
 			sqlReader.close();
 
 			Scanner webhookReader = new Scanner(new File("webhook.txt"));
-			
-			if(webhookReader.hasNextLine()) {
+
+			if (webhookReader.hasNextLine()) {
 				WEBHOOK_URL = webhookReader.nextLine();
 				System.out.println(WEBHOOK_URL);
 			} else {
@@ -123,6 +124,7 @@ public class Main {
 		System.out.println("Starting Left4Chat Discord bot...");
 
 		api = new DiscordApiBuilder().setToken(TOKEN).login().join();
+		api.updateActivity(ActivityType.PLAYING, "Minecraft on left4craft.org");
 		subscribe();
 		System.out.println("Redis listeners enabled!");
 		// new DiscordApiBuilder().setToken(TOKEN).login().thenAccept(api -> {
@@ -150,7 +152,7 @@ public class Main {
 							}
 						}, 500);
 
-						String pString = "```Players: " + players.length + "\n";
+						String pString = "```Players: " + (players[0].isEmpty() ? 0 : players.length) + "\n";
 						pString += String.join(", ", players) + "```";
 						msg.getChannel().sendMessage(pString);
 					} else {
@@ -188,6 +190,7 @@ public class Main {
 						embed.addField("Commands",
 								"`!help` - Displays this help menu\n"
 										+ "`!lookup @player` - looks up a player's punishment history\n"
+										+ "`!realname @player` - looks up a player's in-game username and uuid\n"
 										+ "`!trivia` - Generates a trivia question you can answer for in-game rewards\n"
 										+ "`!mute <player> [time] <reason>` - Mutes a player (staff only)\n"
 										+ "`!unmute <player>` - Unmutes a player (staff only)");
@@ -246,6 +249,81 @@ public class Main {
 							embed.setColor(new Color(200, 0, 0));
 							embed.setFooter(Main.FOOTER_TEXT);
 							msg.getChannel().sendMessage(embed);
+						}
+					} else if (msg.getChannel().getId() == BOTCHANNEL
+							&& content.toLowerCase().startsWith("!realname")) {
+						String[] parts = content.split(" ");
+						TextChannel channel = msg.getChannel().asTextChannel().get();
+						if (parts.length < 2) {
+							EmbedBuilder embed = new EmbedBuilder();
+							embed.addField("Error", "Usage: `!realname @player`");
+							embed.setColor(new Color(200, 0, 0));
+							embed.setFooter(Main.FOOTER_TEXT);
+							channel.sendMessage(embed);
+						} else {
+							String pString = parts[1];
+							System.out.println(pString);
+							if (!pString.startsWith("<@")) {
+								EmbedBuilder embed = new EmbedBuilder();
+								embed.addField("Error", "Invalid tag");
+								embed.setColor(new Color(200, 0, 0));
+								embed.setFooter(Main.FOOTER_TEXT);
+								channel.sendMessage(embed);
+							} else {
+								try {
+									int startIndex = 0;
+									while (!"1234567890".contains("" + pString.charAt(startIndex)))
+										startIndex++;
+									long id = Long.parseLong(pString.substring(startIndex, pString.length() - 1));
+									User u = api.getUserById(id).get();
+									PreparedStatement sta = connection.prepareStatement(
+											"SELECT HEX(uuid) FROM discord_users WHERE discordID = ?");
+									sta.setLong(1, id);
+									ResultSet rs = sta.executeQuery();
+									if (rs.next()) {
+										String uuid = rs.getString(1);
+										uuid = uuid.toLowerCase();
+										uuid = new StringBuilder(uuid).insert(8, '-').insert(13, '-').insert(18, '-').insert(23, '-').toString();
+										sta = connection.prepareStatement("SELECT name FROM MCnicks.nicky WHERE uuid = ?");
+										sta.setString(1, uuid);
+										rs = sta.executeQuery();
+										if(rs.next()) {
+											String realName = rs.getString(1);
+											EmbedBuilder embed = new EmbedBuilder();
+											embed.setAuthor(realName, "https://web.left4craft.org/bans/history.php?uuid=" + uuid, "https://crafatar.com/avatars/" + uuid);
+											embed.addField("Nickname", u.getDisplayName(api.getServerById(SERVER).get()), true);
+											embed.addField("Real Name", realName, true);
+											embed.addField("UUID", uuid);
+											embed.setColor(new Color(76, 175, 80));
+											embed.setFooter(Main.FOOTER_TEXT);
+											channel.sendMessage(embed);
+										} else {
+											EmbedBuilder embed = new EmbedBuilder();
+											embed.setAuthor(u.getDisplayName(api.getServerById(SERVER).get()), "https://web.left4craft.org/bans/history.php?uuid=" + uuid, "https://crafatar.com/avatars/" + uuid);
+											embed.addField("Nickname", "No nickname", true);
+											embed.addField("Real Name", u.getDisplayName(api.getServerById(SERVER).get()), true);
+											embed.addField("UUID", uuid);
+											embed.setColor(new Color(76, 175, 80));
+											embed.setFooter(Main.FOOTER_TEXT);
+											channel.sendMessage(embed);
+										}
+									} else {
+										EmbedBuilder embed = new EmbedBuilder();
+										embed.addField("Error", "Discord account " + id
+												+ " is not currently linked to a Minecraft account.");
+										embed.setColor(new Color(200, 0, 0));
+										embed.setFooter(Main.FOOTER_TEXT);
+										channel.sendMessage(embed);
+									}
+								} catch (NumberFormatException | SQLException | InterruptedException
+										| ExecutionException e) {
+									EmbedBuilder embed = new EmbedBuilder();
+									embed.addField("Error", "Invalid tag");
+									embed.setColor(new Color(200, 0, 0));
+									embed.setFooter(Main.FOOTER_TEXT);
+									channel.sendMessage(embed);
+								}
+							}
 						}
 					} else if (content.toLowerCase().startsWith("!mute")) {
 						User author = msg.getMessageAuthor().asUser().get();
@@ -383,8 +461,6 @@ public class Main {
 		}
 		System.out.println("Got roles: " + roles.toString());
 
-
-
 		Timer t = new Timer();
 		t.scheduleAtFixedRate(new ExpireTask(api), 0, 60000l);
 		t.scheduleAtFixedRate(new KeepAliveTask(connection), 0, 600000l);
@@ -396,11 +472,12 @@ public class Main {
 		Collection<User> members = api.getServerById(SERVER).get().getMembers();
 		for (User u : members) {
 			Server server = api.getServerById(SERVER).get();
-			if(u.getRoles(server).size() > 1) {
+			if (u.getRoles(server).size() > 1) {
 				try {
-					PreparedStatement sta = connection.prepareStatement("SELECT * FROM discord_users WHERE discordID=?");
+					PreparedStatement sta = connection
+							.prepareStatement("SELECT * FROM discord_users WHERE discordID=?");
 					sta.setLong(1, u.getId());
-					if(!sta.executeQuery().next()) {
+					if (!sta.executeQuery().next()) {
 						unlinkedUsers += u.getDisplayName(server) + "\n";
 					}
 				} catch (SQLException e) {
