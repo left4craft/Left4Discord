@@ -13,6 +13,8 @@ import java.util.TimerTask;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import com.github.captnsisko.left4discord.Util.DatabaseManager;
+
 import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.user.User;
@@ -22,7 +24,7 @@ public class MuteTask extends TimerTask {
 	public void run() {
 		System.out.println("Running mute task...");
 		try {
-			Statement sta = Main.getSQL().createStatement();
+			Statement sta = DatabaseManager.get().createStatement();
 			Set<String> uuids = new HashSet<String>();
 			ResultSet r = sta.executeQuery("SELECT * FROM litebans_mutes WHERE active=1;");
 			while(r.next()) {
@@ -38,7 +40,7 @@ public class MuteTask extends TimerTask {
 			ArrayList<Long> muted = new ArrayList<Long>();
 			ArrayList<Long> currentlyMuted = new ArrayList<Long>();
 			for(String uuid : uuids) {
-				PreparedStatement prepared = Main.getSQL().prepareStatement("SELECT discordID from discord_users WHERE UUID=UNHEX(?)");
+				PreparedStatement prepared = DatabaseManager.get().prepareStatement("SELECT discordID from discord_users WHERE UUID=UNHEX(?)");
 				prepared.setString(1, uuid.replaceAll("-", ""));
 				r = prepared.executeQuery();
 				if(r.next()) {
@@ -65,7 +67,7 @@ public class MuteTask extends TimerTask {
 							embed.setFooter(Main.FOOTER_TEXT);
 							Main.getAPI().getChannelById(Main.MUTEDCHANNEL).get().asServerTextChannel().get().sendMessage(embed);
 							CompletableFuture<Message> m = Main.getAPI().getChannelById(Main.MUTEDCHANNEL).get().asServerTextChannel().get().sendMessage(u.getNicknameMentionTag() + "'s Punishment History:");
-							new PunishmentEmbed(Main.getSQL(),
+							new PunishmentEmbed(
 								m,
 								id,
 								u.getDisplayName(Main.getAPI().getServerById(Main.SERVER).get())).run();

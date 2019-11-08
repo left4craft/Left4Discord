@@ -15,6 +15,8 @@ import java.util.TimeZone;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import com.github.captnsisko.left4discord.Util.DatabaseManager;
+
 import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 
@@ -26,9 +28,8 @@ public class PunishmentEmbed implements Runnable {
 	long id;
 	String name;
 
-	public PunishmentEmbed(Connection conn, CompletableFuture<Message> msg, long id, String name) {
+	public PunishmentEmbed(CompletableFuture<Message> msg, long id, String name) {
 		this.msg = msg;
-		this.conn = conn;
 		this.id = id;
 		this.name = name;
 	}
@@ -37,6 +38,7 @@ public class PunishmentEmbed implements Runnable {
 	public void run() {
 		//System.out.println("[DEBUG] RUNNING PUNISHMENTEMBED");
 		try {
+			conn = DatabaseManager.get();
 			PreparedStatement statement = conn.prepareStatement("SELECT HEX(UUID) FROM discord_users WHERE discordID= ?");
 			statement.setLong(1, id);
 			ResultSet r = statement.executeQuery();

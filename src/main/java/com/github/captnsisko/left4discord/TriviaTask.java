@@ -13,7 +13,7 @@ import java.util.Timer;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import org.javacord.api.entity.channel.ServerTextChannel;
+import org.javacord.api.entity.channel.TextChannel;
 import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.user.User;
@@ -23,6 +23,8 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.captnsisko.left4discord.Commands.TriviaCommand;
+import com.github.captnsisko.left4discord.Util.DatabaseManager;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import com.vdurmont.emoji.EmojiParser;
@@ -32,9 +34,9 @@ import redis.clients.jedis.Jedis;
 public class TriviaTask implements Runnable {
 	private boolean completed;
 	private User user;
-	private ServerTextChannel channel;
+	private TextChannel channel;
 
-	public TriviaTask(User user, ServerTextChannel channel) {
+	public TriviaTask(User user, TextChannel channel) {
 		this.user = user;
 		this.channel = channel;
 		completed = false;
@@ -114,7 +116,7 @@ public class TriviaTask implements Runnable {
 									result.setFooter(Main.FOOTER_TEXT);
 									channel.sendMessage(result);
 									msg.removeAllReactions();
-									Main.removeTriviaUser(user.getId());
+									TriviaCommand.removeTriviaUser(user.getId());
 								}
 							}
 						}
@@ -151,14 +153,14 @@ public class TriviaTask implements Runnable {
 
 	private String reward(long id, String difficulty) {
 		try {
-			PreparedStatement statement = Main.getSQL().prepareStatement("SELECT HEX(UUID) FROM discord_users WHERE discordID = ?");
+			PreparedStatement statement = DatabaseManager.get().prepareStatement("SELECT HEX(UUID) FROM discord_users WHERE discordID = ?");
 			statement.setLong(1, id);
 			ResultSet r = statement.executeQuery();
 			if (r.next()) {
 				String uuid = r.getString(1);
 				uuid = uuid.toLowerCase();
 				uuid = new StringBuilder(uuid).insert(8, '-').insert(13, '-').insert(18, '-').insert(23, '-').toString();
-				statement = Main.getSQL().prepareStatement("SELECT name FROM litebans_history WHERE uuid=? ORDER BY date DESC;");
+				statement = DatabaseManager.get().prepareStatement("SELECT name FROM litebans_history WHERE uuid=? ORDER BY date DESC;");
 				statement.setString(1, uuid);
 				r = statement.executeQuery();
 				if (r.next()) {

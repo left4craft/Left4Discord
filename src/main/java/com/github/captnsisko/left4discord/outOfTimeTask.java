@@ -3,6 +3,8 @@ package com.github.captnsisko.left4discord;
 import java.awt.Color;
 import java.util.TimerTask;
 
+import com.github.captnsisko.left4discord.Commands.TriviaCommand;
+
 import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.user.User;
@@ -24,7 +26,7 @@ public class outOfTimeTask extends TimerTask {
 
 	@Override
 	public void run() {
-		Main.removeTriviaUser(user.getId());
+		TriviaCommand.removeTriviaUser(user.getId());
 		if(!task.isCompleted()) {
 			EmbedBuilder embed = new EmbedBuilder();
 			embed.setColor(new Color(200, 0, 0));
