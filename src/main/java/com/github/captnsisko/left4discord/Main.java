@@ -3,7 +3,6 @@ package com.github.captnsisko.left4discord;
 import java.awt.Color;
 import java.io.File;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,8 +19,6 @@ import org.javacord.api.DiscordApi;
 import org.javacord.api.DiscordApiBuilder;
 import org.javacord.api.entity.activity.ActivityType;
 import org.javacord.api.entity.channel.Channel;
-//import org.javacord.api.entity.channel.ServerVoiceChannel;
-import org.javacord.api.entity.channel.TextChannel;
 import org.javacord.api.entity.message.Messageable;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.user.User;
@@ -30,9 +27,13 @@ import org.javacord.api.event.server.member.ServerMemberJoinEvent;
 
 import com.github.captnsisko.left4discord.Commands.ChatCommand;
 import com.github.captnsisko.left4discord.Commands.Command;
+import com.github.captnsisko.left4discord.Commands.HelpCommand;
 import com.github.captnsisko.left4discord.Commands.LookupCommand;
+import com.github.captnsisko.left4discord.Commands.MuteCommand;
+import com.github.captnsisko.left4discord.Commands.RealnameCommand;
 import com.github.captnsisko.left4discord.Commands.SyncCommand;
 import com.github.captnsisko.left4discord.Commands.TriviaCommand;
+import com.github.captnsisko.left4discord.Commands.UnmuteCommand;
 import com.github.captnsisko.left4discord.Util.DatabaseManager;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
@@ -94,6 +95,10 @@ public class Main {
 		commands.add(new SyncCommand());
 		commands.add(new LookupCommand());
 		commands.add(new TriviaCommand());
+		commands.add(new RealnameCommand());
+		commands.add(new MuteCommand());
+		commands.add(new UnmuteCommand());
+		commands.add(new HelpCommand(commands.toArray(new Command[commands.size()])));
 
 		api.addMessageCreateListener(event -> {
 			if (event instanceof MessageCreateEvent) {
@@ -102,7 +107,7 @@ public class Main {
 
 				if (msg.getMessageAuthor().isRegularUser()) {
 					String content = msg.getMessageContent();
-					if (msg.getChannel().getId() == BOTCHANNEL && content.toLowerCase().startsWith("!help")) {
+					/*if (msg.getChannel().getId() == BOTCHANNEL && content.toLowerCase().startsWith("!help")) {
 						EmbedBuilder embed = new EmbedBuilder();
 						embed.addField("Purpose",
 								"This bot was written by Captain_Sisko to synchronize ranks, usernames, chat messages, and punishments between "
@@ -117,191 +122,8 @@ public class Main {
 						embed.setColor(new Color(76, 175, 80));
 						embed.setFooter(FOOTER_TEXT);
 						msg.getChannel().asTextChannel().get().sendMessage(embed);
-					}  else if (msg.getChannel().getId() == BOTCHANNEL
-							&& content.toLowerCase().startsWith("!realname")) {
-						String[] parts = content.split(" ");
-						TextChannel channel = msg.getChannel().asTextChannel().get();
-						if (parts.length < 2) {
-							EmbedBuilder embed = new EmbedBuilder();
-							embed.addField("Error", "Usage: `!realname @player`");
-							embed.setColor(new Color(200, 0, 0));
-							embed.setFooter(Main.FOOTER_TEXT);
-							channel.sendMessage(embed);
-						} else {
-							String pString = parts[1];
-							System.out.println(pString);
-							if (!pString.startsWith("<@")) {
-								EmbedBuilder embed = new EmbedBuilder();
-								embed.addField("Error", "Invalid tag");
-								embed.setColor(new Color(200, 0, 0));
-								embed.setFooter(Main.FOOTER_TEXT);
-								channel.sendMessage(embed);
-							} else {
-								try {
-									int startIndex = 0;
-									while (!"1234567890".contains("" + pString.charAt(startIndex)))
-										startIndex++;
-									long id = Long.parseLong(pString.substring(startIndex, pString.length() - 1));
-									User u = api.getUserById(id).get();
-									PreparedStatement sta = DatabaseManager.get().prepareStatement(
-											"SELECT HEX(uuid) FROM discord_users WHERE discordID = ?");
-									sta.setLong(1, id);
-									ResultSet rs = sta.executeQuery();
-									if (rs.next()) {
-										String uuid = rs.getString(1);
-										uuid = uuid.toLowerCase();
-										uuid = new StringBuilder(uuid).insert(8, '-').insert(13, '-').insert(18, '-').insert(23, '-').toString();
-										sta = DatabaseManager.get().prepareStatement("SELECT name FROM MCnicks.nicky WHERE uuid = ?");
-										sta.setString(1, uuid);
-										rs = sta.executeQuery();
-										if(rs.next()) {
-											String realName = rs.getString(1);
-											EmbedBuilder embed = new EmbedBuilder();
-											embed.setAuthor(realName, "https://web.left4craft.org/bans/history.php?uuid=" + uuid, "https://crafatar.com/avatars/" + uuid);
-											embed.addField("Nickname", u.getDisplayName(api.getServerById(SERVER).get()), true);
-											embed.addField("Real Name", realName, true);
-											embed.addField("UUID", uuid);
-											embed.setColor(new Color(76, 175, 80));
-											embed.setFooter(Main.FOOTER_TEXT);
-											channel.sendMessage(embed);
-										} else {
-											EmbedBuilder embed = new EmbedBuilder();
-											embed.setAuthor(u.getDisplayName(api.getServerById(SERVER).get()), "https://web.left4craft.org/bans/history.php?uuid=" + uuid, "https://crafatar.com/avatars/" + uuid);
-											embed.addField("Nickname", "No nickname", true);
-											embed.addField("Real Name", u.getDisplayName(api.getServerById(SERVER).get()), true);
-											embed.addField("UUID", uuid);
-											embed.setColor(new Color(76, 175, 80));
-											embed.setFooter(Main.FOOTER_TEXT);
-											channel.sendMessage(embed);
-										}
-									} else {
-										EmbedBuilder embed = new EmbedBuilder();
-										embed.addField("Error", "Discord account " + id
-												+ " is not currently linked to a Minecraft account.");
-										embed.setColor(new Color(200, 0, 0));
-										embed.setFooter(Main.FOOTER_TEXT);
-										channel.sendMessage(embed);
-									}
-								} catch (NumberFormatException | SQLException | InterruptedException
-										| ExecutionException e) {
-									EmbedBuilder embed = new EmbedBuilder();
-									embed.addField("Error", "Invalid tag");
-									embed.setColor(new Color(200, 0, 0));
-									embed.setFooter(Main.FOOTER_TEXT);
-									channel.sendMessage(embed);
-								}
-							}
-						}
-					} else if (content.toLowerCase().startsWith("!mute")) {
-						User author = msg.getMessageAuthor().asUser().get();
-						if (author.getRoles(api.getServerById(SERVER).get()).contains(roles.get("staff"))) {
-							String[] parts = content.split(" ");
-							if (content.length() > 200) {
-								EmbedBuilder embed = new EmbedBuilder();
-								embed.addField("Error", "Please limit your mute command to 200 characters or less.");
-								embed.setColor(new Color(200, 0, 0));
-								embed.setFooter(Main.FOOTER_TEXT);
-								msg.getChannel().sendMessage(embed);
-							} else if (parts.length < 3) {
-								EmbedBuilder embed = new EmbedBuilder();
-								embed.addField("Error", "Usage: `!mute <player> [time] <reason>`");
-								embed.setColor(new Color(200, 0, 0));
-								embed.setFooter(Main.FOOTER_TEXT);
-								msg.getChannel().sendMessage(embed);
-							} else if (parts.length == 3 && parts[2]
-									.matches("[1-9]+(?:\\.\\d+)?\\s*[s|sec|seconds|m|min|minutes|h|hours|d|days]")) {
-								EmbedBuilder embed = new EmbedBuilder();
-								embed.addField("Error", "You must specify a reason for punishment.");
-								embed.setColor(new Color(200, 0, 0));
-								embed.setFooter(Main.FOOTER_TEXT);
-								msg.getChannel().sendMessage(embed);
-							} else {
-								try {
-									PreparedStatement sta = DatabaseManager.get()
-											.prepareStatement("SELECT uuid FROM litebans_history WHERE name = ?");
-									sta.setString(1, parts[1]);
-									ResultSet r = sta.executeQuery();
-									if (r.next()) {
-										Jedis j = new Jedis();
-										j.publish("minecraft.console.hub.in", content.substring(1) + " via Discord by "
-												+ author.getDisplayName(msg.getServer().get()));
-										j.close();
-										EmbedBuilder embed = new EmbedBuilder();
-										embed.addField("Success", parts[1] + " was muted.");
-										embed.setColor(new Color(76, 175, 80));
-										embed.setFooter(Main.FOOTER_TEXT);
-										msg.getChannel().sendMessage(embed);
-									} else {
-										EmbedBuilder embed = new EmbedBuilder();
-										embed.addField("Error", "Player " + parts[1] + " was not found.");
-										embed.setColor(new Color(200, 0, 0));
-										embed.setFooter(Main.FOOTER_TEXT);
-										msg.getChannel().sendMessage(embed);
-									}
-								} catch (SQLException e) {
-									e.printStackTrace();
-								}
-							}
-
-						} else {
-							EmbedBuilder embed = new EmbedBuilder();
-							embed.addField("Error",
-									"You don't have permission to do that, " + author.getMentionTag() + "!");
-							embed.setColor(new Color(200, 0, 0));
-							embed.setFooter(Main.FOOTER_TEXT);
-							msg.getChannel().sendMessage(embed);
-						}
-					} else if (content.toLowerCase().startsWith("!unmute")) {
-						User author = msg.getMessageAuthor().asUser().get();
-						if (author.getRoles(api.getServerById(SERVER).get()).contains(roles.get("staff"))) {
-							String[] parts = content.split(" ");
-							if (content.length() > 30) {
-								EmbedBuilder embed = new EmbedBuilder();
-								embed.addField("Error", "Please limit your unmute command to 30 characters or less.");
-								embed.setColor(new Color(200, 0, 0));
-								embed.setFooter(Main.FOOTER_TEXT);
-								msg.getChannel().sendMessage(embed);
-							} else if (parts.length < 2) {
-								EmbedBuilder embed = new EmbedBuilder();
-								embed.addField("Error", "Usage: `!unmute <player>`");
-								embed.setColor(new Color(200, 0, 0));
-								embed.setFooter(Main.FOOTER_TEXT);
-								msg.getChannel().sendMessage(embed);
-							} else {
-								try {
-									PreparedStatement sta = DatabaseManager.get()
-											.prepareStatement("SELECT uuid FROM litebans_history WHERE name = ?");
-									sta.setString(1, parts[1]);
-									ResultSet r = sta.executeQuery();
-									if (r.next()) {
-										Jedis j = new Jedis();
-										j.publish("minecraft.console.hub.in", content.substring(1));
-										j.close();
-										EmbedBuilder embed = new EmbedBuilder();
-										embed.addField("Success", parts[1] + " was unmuted.");
-										embed.setColor(new Color(76, 175, 80));
-										embed.setFooter(Main.FOOTER_TEXT);
-										msg.getChannel().sendMessage(embed);
-									} else {
-										EmbedBuilder embed = new EmbedBuilder();
-										embed.addField("Error", "Player " + parts[1] + " was not found.");
-										embed.setColor(new Color(200, 0, 0));
-										embed.setFooter(Main.FOOTER_TEXT);
-										msg.getChannel().sendMessage(embed);
-									}
-								} catch (SQLException e) {
-									e.printStackTrace();
-								}
-							}
-						} else {
-							EmbedBuilder embed = new EmbedBuilder();
-							embed.addField("Error",
-									"You don't have permission to do that, " + author.getMentionTag() + "!");
-							embed.setColor(new Color(200, 0, 0));
-							embed.setFooter(Main.FOOTER_TEXT);
-							msg.getChannel().sendMessage(embed);
-						}
 					}
+					*/
 				}
 			}
 		});

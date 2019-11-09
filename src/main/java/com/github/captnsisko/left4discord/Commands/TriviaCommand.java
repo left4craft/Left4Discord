@@ -24,7 +24,7 @@ public class TriviaCommand extends Command {
 
     @Override
     protected boolean isCalled(Message msg) {
-        return msg.getChannel().getId() == Constants.BOTCHANNEL && msg.getContent().toLowerCase().startsWith("!trivia");
+        return msg.getChannel().getId() == Constants.BOTCHANNEL && msg.getContent().toLowerCase().startsWith(Constants.PREFIX + keyword);
     }
 
     @Override
