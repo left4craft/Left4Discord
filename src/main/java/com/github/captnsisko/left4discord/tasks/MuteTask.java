@@ -1,4 +1,4 @@
-package com.github.captnsisko.left4discord;
+package com.github.captnsisko.left4discord.tasks;
 
 import java.awt.Color;
 import java.sql.PreparedStatement;
@@ -13,7 +13,9 @@ import java.util.TimerTask;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import com.github.captnsisko.left4discord.Util.DatabaseManager;
+import com.github.captnsisko.left4discord.Main;
+import com.github.captnsisko.left4discord.util.Constants;
+import com.github.captnsisko.left4discord.util.DatabaseManager;
 
 import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
@@ -54,7 +56,7 @@ public class MuteTask extends TimerTask {
 			for(long id : muted) {
 				if(!currentlyMuted.contains(id)) {
 					try {
-						User u = Main.getAPI().getServerById(Main.SERVER).get().getMemberById(id).get();
+						User u = Main.getAPI().getServerById(Constants.SERVER).get().getMemberById(id).get();
 						if(Main.mute(u)) {
 							EmbedBuilder embed = new EmbedBuilder();
 							embed.setAuthor(u);
@@ -65,12 +67,12 @@ public class MuteTask extends TimerTask {
 							embed.addField("Appeal", "Depending on your offense, you may be able to appeal your punishment at https://left4.cf/appeal");
 							embed.setColor(new Color(200, 0, 0));
 							embed.setFooter(Main.FOOTER_TEXT);
-							Main.getAPI().getChannelById(Main.MUTEDCHANNEL).get().asServerTextChannel().get().sendMessage(embed);
-							CompletableFuture<Message> m = Main.getAPI().getChannelById(Main.MUTEDCHANNEL).get().asServerTextChannel().get().sendMessage(u.getNicknameMentionTag() + "'s Punishment History:");
-							new PunishmentEmbed(
+							Main.getAPI().getChannelById(Constants.MUTEDCHANNEL).get().asServerTextChannel().get().sendMessage(embed);
+							CompletableFuture<Message> m = Main.getAPI().getChannelById(Constants.MUTEDCHANNEL).get().asServerTextChannel().get().sendMessage(u.getNicknameMentionTag() + "'s Punishment History:");
+							new LookupTask(
 								m,
 								id,
-								u.getDisplayName(Main.getAPI().getServerById(Main.SERVER).get())).run();
+								u.getDisplayName(Main.getAPI().getServerById(Constants.SERVER).get())).run();
 						}
 					} catch (NoSuchElementException e) {
 						//System.out.println("Could not find muted user " + id + ", they may have left the server.");
@@ -88,8 +90,8 @@ public class MuteTask extends TimerTask {
 								+ "Please ensure you read and follow the rules to avoid this in the future. "
 								+ "Your Discord role has been removed for now. It will be updated when you reconnect to the server.");
 						embed.setColor(new Color(76, 175, 80));
-						embed.setFooter(Main.FOOTER_TEXT);
-						Main.getAPI().getChannelById(Main.MUTEDCHANNEL).get().asServerTextChannel().get().sendMessage(embed);
+						embed.setFooter(Constants.FOOTER_TEXT);
+						Main.getAPI().getChannelById(Constants.MUTEDCHANNEL).get().asServerTextChannel().get().sendMessage(embed);
 						embed.removeAllFields();
 						embed.addField("Unmuted", "You have been unmuted because your in-game punishment expired. "
 								+ "Please ensure you read and follow the rules to avoid this in the future. "

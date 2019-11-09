@@ -1,8 +1,8 @@
-package com.github.captnsisko.left4discord.Commands;
+package com.github.captnsisko.left4discord.commands;
 
 import java.awt.Color;
 
-import com.github.captnsisko.left4discord.Util.Constants;
+import com.github.captnsisko.left4discord.util.Constants;
 
 import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.embed.EmbedBuilder;

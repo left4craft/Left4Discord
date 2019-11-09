@@ -1,11 +1,11 @@
-package com.github.captnsisko.left4discord.Commands;
+package com.github.captnsisko.left4discord.commands;
 
 import java.awt.Color;
 import java.util.concurrent.CompletableFuture;
 
-import com.github.captnsisko.left4discord.PunishmentEmbed;
-import com.github.captnsisko.left4discord.Util.Constants;
-import com.github.captnsisko.left4discord.Util.UserSearch;
+import com.github.captnsisko.left4discord.tasks.LookupTask;
+import com.github.captnsisko.left4discord.util.Constants;
+import com.github.captnsisko.left4discord.util.UserSearch;
 
 import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
@@ -41,7 +41,7 @@ public class LookupCommand extends Command {
             if (u != null) {
                 CompletableFuture<Message> m = msg.getChannel()
                         .sendMessage("Looking up Discord user " + u.getId() + "...");
-                new Thread(new PunishmentEmbed(m, u.getId(), u.getDisplayName(msg.getServer().get()))).run();
+                new Thread(new LookupTask(m, u.getId(), u.getDisplayName(msg.getServer().get()))).run();
             }
         }
     }

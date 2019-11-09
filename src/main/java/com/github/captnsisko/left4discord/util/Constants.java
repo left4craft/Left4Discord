@@ -1,4 +1,4 @@
-package com.github.captnsisko.left4discord.Util;
+package com.github.captnsisko.left4discord.util;
 
 public class Constants {
 	public static final String PREFIX = "!";
@@ -10,4 +10,5 @@ public class Constants {
 	public static final long PMCHANNEL = 526562171472183296l;
 	public static final long MUTEDCHANNEL = 587122816797769788l;
 	public static final long MUTEDROLE = 587112191950585856l;
+	public static final long SERVER = 424571587413540874l;
 }

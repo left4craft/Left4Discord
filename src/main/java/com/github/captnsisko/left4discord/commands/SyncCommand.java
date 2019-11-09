@@ -1,4 +1,4 @@
-package com.github.captnsisko.left4discord.Commands;
+package com.github.captnsisko.left4discord.commands;
 
 import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.user.User;

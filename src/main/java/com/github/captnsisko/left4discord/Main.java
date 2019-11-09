@@ -1,6 +1,5 @@
 package com.github.captnsisko.left4discord;
 
-import java.awt.Color;
 import java.io.File;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -20,21 +19,16 @@ import org.javacord.api.DiscordApiBuilder;
 import org.javacord.api.entity.activity.ActivityType;
 import org.javacord.api.entity.channel.Channel;
 import org.javacord.api.entity.message.Messageable;
-import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.user.User;
 import org.javacord.api.event.message.MessageCreateEvent;
 import org.javacord.api.event.server.member.ServerMemberJoinEvent;
 
-import com.github.captnsisko.left4discord.Commands.ChatCommand;
-import com.github.captnsisko.left4discord.Commands.Command;
-import com.github.captnsisko.left4discord.Commands.HelpCommand;
-import com.github.captnsisko.left4discord.Commands.LookupCommand;
-import com.github.captnsisko.left4discord.Commands.MuteCommand;
-import com.github.captnsisko.left4discord.Commands.RealnameCommand;
-import com.github.captnsisko.left4discord.Commands.SyncCommand;
-import com.github.captnsisko.left4discord.Commands.TriviaCommand;
-import com.github.captnsisko.left4discord.Commands.UnmuteCommand;
-import com.github.captnsisko.left4discord.Util.DatabaseManager;
+import com.github.captnsisko.left4discord.commands.*;
+import com.github.captnsisko.left4discord.tasks.ExpireTask;
+import com.github.captnsisko.left4discord.tasks.MuteTask;
+import com.github.captnsisko.left4discord.tasks.PlayercountTask;
+import com.github.captnsisko.left4discord.util.Constants;
+import com.github.captnsisko.left4discord.util.DatabaseManager;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 
@@ -46,13 +40,8 @@ public class Main {
 	private static DiscordApi api;
 	private static HashMap<String, Role> roles;
 	private static Server server;
-	public static final long SERVER = 424571587413540874l;
-	public static final long MINECRAFTCHANNEL = 424870757860900865l;
-	private static final long BOTCHANNEL = 424889411499458561l;
 	private static final long STAFFROLE = 424867647381831690l;
 	private static final long PMCHANNEL = 526562171472183296l;
-	public static final long MUTEDCHANNEL = 587122816797769788l;
-	public static final long MUTEDROLE = 587112191950585856l;
 
 	public static final String FOOTER_TEXT = "Left4Chat 2.4 | Written by Captain_Sisko";
 
@@ -104,27 +93,6 @@ public class Main {
 			if (event instanceof MessageCreateEvent) {
 				MessageCreateEvent msg = (MessageCreateEvent) event;
 				commands.forEach(c -> c.executeIfCalled(msg.getMessage()));
-
-				if (msg.getMessageAuthor().isRegularUser()) {
-					String content = msg.getMessageContent();
-					/*if (msg.getChannel().getId() == BOTCHANNEL && content.toLowerCase().startsWith("!help")) {
-						EmbedBuilder embed = new EmbedBuilder();
-						embed.addField("Purpose",
-								"This bot was written by Captain_Sisko to synchronize ranks, usernames, chat messages, and punishments between "
-										+ "Minecraft and Discord. It has additional features to enhance the user experience on the Left4Craft Discord server.");
-						embed.addField("Commands",
-								"`!help` - Displays this help menu\n"
-										+ "`!lookup @player` - looks up a player's punishment history\n"
-										+ "`!realname @player` - looks up a player's in-game username and uuid\n"
-										+ "`!trivia` - Generates a trivia question you can answer for in-game rewards\n"
-										+ "`!mute <player> [time] <reason>` - Mutes a player (staff only)\n"
-										+ "`!unmute <player>` - Unmutes a player (staff only)");
-						embed.setColor(new Color(76, 175, 80));
-						embed.setFooter(FOOTER_TEXT);
-						msg.getChannel().asTextChannel().get().sendMessage(embed);
-					}
-					*/
-				}
 			}
 		});
 		api.addServerMemberJoinListener(event -> {
@@ -136,7 +104,7 @@ public class Main {
 		});
 		System.out.println("Discord listeners enabled!");
 
-		server = api.getServerById(SERVER).get();
+		server = api.getServerById(Constants.SERVER).get();
 		roles = new HashMap<String, Role>();
 		try {
 			for (Role r : server.getRoles()) {
@@ -150,15 +118,14 @@ public class Main {
 
 		Timer t = new Timer();
 		t.scheduleAtFixedRate(new ExpireTask(api), 0, 60000l);
-		//t.scheduleAtFixedRate(new KeepAliveTask(DatabaseManager.get()), 0, 600000l);
 		t.scheduleAtFixedRate(new MuteTask(), 0, 300000l);
 		System.out.println("Enabled expired key remover");
 
 		String unlinkedUsers = "";
 		System.out.println("Finding unlinked users...");
-		Collection<User> members = api.getServerById(SERVER).get().getMembers();
+		Collection<User> members = api.getServerById(Constants.SERVER).get().getMembers();
 		for (User u : members) {
-			Server server = api.getServerById(SERVER).get();
+			Server server = api.getServerById(Constants.SERVER).get();
 			if (u.getRoles(server).size() > 1) {
 				try {
 					PreparedStatement sta = DatabaseManager.get()
@@ -183,7 +150,7 @@ public class Main {
 				if (channel.equals("minecraft.chat.global.out")) {
 					System.out.println(message);
 					if (message.startsWith(":") || message.startsWith("<")) {
-						Channel c = api.getChannelById(MINECRAFTCHANNEL).get();
+						Channel c = api.getChannelById(Constants.MINECRAFTCHANNEL).get();
 						if (c instanceof Messageable) {
 							((Messageable) c).sendMessage(message);
 						}
@@ -205,7 +172,7 @@ public class Main {
 							if (content.toLowerCase().contains("@staff")) {
 								content = content.replaceAll("(?i)@staff",
 										api.getRoleById(STAFFROLE).get().getMentionTag());
-								Channel c = api.getChannelById(MINECRAFTCHANNEL).get();
+								Channel c = api.getChannelById(Constants.MINECRAFTCHANNEL).get();
 								if (c instanceof Messageable) {
 									((Messageable) c).sendMessage("**" + name + "** " + content);
 								}
@@ -246,7 +213,7 @@ public class Main {
 							if (role != null && user != null && !isMuted(user)
 									&& !user.getRoles(server).contains(role)) {
 								for (Role r : user.getRoles(server))
-									if (r.getId() != MUTEDROLE)
+									if (r.getId() != Constants.MUTEDROLE)
 										user.removeRole(r);
 								user.addRole(role);
 								if (parts[2].equalsIgnoreCase("Owner") || parts[2].equalsIgnoreCase("Admin")
@@ -331,7 +298,7 @@ public class Main {
 			return false;
 		}
 		for (Role r : u.getRoles(server))
-			if (r.getId() != MUTEDROLE)
+			if (r.getId() != Constants.MUTEDROLE)
 				u.removeRole(r);
 
 		return true;

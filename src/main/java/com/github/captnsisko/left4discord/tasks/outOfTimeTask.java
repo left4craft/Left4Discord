@@ -1,9 +1,10 @@
-package com.github.captnsisko.left4discord;
+package com.github.captnsisko.left4discord.tasks;
 
 import java.awt.Color;
 import java.util.TimerTask;
 
-import com.github.captnsisko.left4discord.Commands.TriviaCommand;
+import com.github.captnsisko.left4discord.commands.TriviaCommand;
+import com.github.captnsisko.left4discord.util.Constants;
 
 import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
@@ -34,7 +35,7 @@ public class outOfTimeTask extends TimerTask {
 			embed.addField("Out of Time", "You took longer than 30 seconds to answer the question!");
 			embed.addField("Correct Answer", correct);
 			embed.addField("Difficulty", difficulty);
-			embed.setFooter(Main.FOOTER_TEXT);
+			embed.setFooter(Constants.FOOTER_TEXT);
 			msg.getChannel().sendMessage(embed);
 			msg.removeAllReactions();
 		}

@@ -1,4 +1,4 @@
-package com.github.captnsisko.left4discord.Commands;
+package com.github.captnsisko.left4discord.commands;
 
 import java.awt.Color;
 import java.sql.PreparedStatement;
@@ -6,8 +6,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import com.github.captnsisko.left4discord.Main;
-import com.github.captnsisko.left4discord.Util.Constants;
-import com.github.captnsisko.left4discord.Util.DatabaseManager;
+import com.github.captnsisko.left4discord.util.Constants;
+import com.github.captnsisko.left4discord.util.DatabaseManager;
 
 import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.embed.EmbedBuilder;

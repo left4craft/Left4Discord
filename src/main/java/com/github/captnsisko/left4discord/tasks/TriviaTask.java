@@ -1,4 +1,4 @@
-package com.github.captnsisko.left4discord;
+package com.github.captnsisko.left4discord.tasks;
 
 
 import java.awt.Color;
@@ -23,8 +23,9 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.captnsisko.left4discord.Commands.TriviaCommand;
-import com.github.captnsisko.left4discord.Util.DatabaseManager;
+import com.github.captnsisko.left4discord.commands.TriviaCommand;
+import com.github.captnsisko.left4discord.util.Constants;
+import com.github.captnsisko.left4discord.util.DatabaseManager;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import com.vdurmont.emoji.EmojiParser;
@@ -67,7 +68,7 @@ public class TriviaTask implements Runnable {
 			//embed.addField("Instructions", "You have 30 seconds to answer the question by reacting with the correct letter choice");
 			embed.setAuthor(user);
 			embed.addField(question, answerStr);
-			embed.setFooter(Main.FOOTER_TEXT);
+			embed.setFooter(Constants.FOOTER_TEXT);
 			try {
 				Message msg = channel.sendMessage(embed).get();
 				String[] choices = {EmojiParser.parseToUnicode(":regional_indicator_symbol_a:"),
@@ -113,7 +114,7 @@ public class TriviaTask implements Runnable {
 									}
 									result.addField("Correct Answer", correct);
 									result.addField("Difficulty", difficulty);
-									result.setFooter(Main.FOOTER_TEXT);
+									result.setFooter(Constants.FOOTER_TEXT);
 									channel.sendMessage(result);
 									msg.removeAllReactions();
 									TriviaCommand.removeTriviaUser(user.getId());
@@ -138,7 +139,7 @@ public class TriviaTask implements Runnable {
 			EmbedBuilder embed = new EmbedBuilder();
 			embed.addField("Error", "Could not reach trivia server");
 			embed.setColor(new Color(200, 0, 0));
-			embed.setFooter(Main.FOOTER_TEXT);
+			embed.setFooter(Constants.FOOTER_TEXT);
 			channel.sendMessage(embed);
 		} 
 	}

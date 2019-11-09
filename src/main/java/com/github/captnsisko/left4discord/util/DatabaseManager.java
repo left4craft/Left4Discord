@@ -1,4 +1,4 @@
-package com.github.captnsisko.left4discord.Util;
+package com.github.captnsisko.left4discord.util;
 
 import java.io.File;
 import java.io.FileNotFoundException;

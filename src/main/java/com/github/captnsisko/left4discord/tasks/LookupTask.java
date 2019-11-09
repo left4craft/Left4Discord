@@ -1,4 +1,4 @@
-package com.github.captnsisko.left4discord;
+package com.github.captnsisko.left4discord.tasks;
 
 import java.awt.Color;
 import java.sql.Connection;
@@ -15,20 +15,21 @@ import java.util.TimeZone;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import com.github.captnsisko.left4discord.Util.DatabaseManager;
+import com.github.captnsisko.left4discord.util.Constants;
+import com.github.captnsisko.left4discord.util.DatabaseManager;
 
 import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 
 import redis.clients.jedis.Jedis;
 
-public class PunishmentEmbed implements Runnable {
+public class LookupTask implements Runnable {
 	Connection conn;
 	CompletableFuture<Message> msg;
 	long id;
 	String name;
 
-	public PunishmentEmbed(CompletableFuture<Message> msg, long id, String name) {
+	public LookupTask(CompletableFuture<Message> msg, long id, String name) {
 		this.msg = msg;
 		this.id = id;
 		this.name = name;
@@ -126,14 +127,14 @@ public class PunishmentEmbed implements Runnable {
 				embed.addField("UUID", uuid, false);
 				embed.addField("Punishments", list, false);
 				embed.setColor(new Color(76, 175, 80));
-				embed.setFooter(Main.FOOTER_TEXT);
+				embed.setFooter(Constants.FOOTER_TEXT);
 				
 				msg.get().edit(embed);
 			} else {
 				EmbedBuilder embed = new EmbedBuilder();
 				embed.addField("Error", "Discord account " + id + " is not currently linked to a Minecraft account.");
 				embed.setColor(new Color(200, 0, 0));
-				embed.setFooter(Main.FOOTER_TEXT);
+				embed.setFooter(Constants.FOOTER_TEXT);
 				msg.get().edit(embed);
 			}
 		} catch (SQLException | InterruptedException | ExecutionException e) {
