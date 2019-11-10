@@ -27,6 +27,7 @@ import com.github.captnsisko.left4discord.commands.*;
 import com.github.captnsisko.left4discord.tasks.ExpireTask;
 import com.github.captnsisko.left4discord.tasks.MuteTask;
 import com.github.captnsisko.left4discord.tasks.PlayercountTask;
+import com.github.captnsisko.left4discord.tasks.WebconsoleTask;
 import com.github.captnsisko.left4discord.util.Constants;
 import com.github.captnsisko.left4discord.util.DatabaseManager;
 import com.mashape.unirest.http.Unirest;
@@ -77,7 +78,6 @@ public class Main {
 		subscribe();
 		System.out.println("Redis listeners enabled!");
 
-
 		// Put all commands into a list
 		List<Command> commands = new ArrayList<Command>();
 		commands.add(new ChatCommand());
@@ -119,6 +119,7 @@ public class Main {
 		Timer t = new Timer();
 		t.scheduleAtFixedRate(new ExpireTask(api), 0, 60000l);
 		t.scheduleAtFixedRate(new MuteTask(), 0, 300000l);
+		t.scheduleAtFixedRate(new WebconsoleTask(api), 0, 600000l);
 		System.out.println("Enabled expired key remover");
 
 		String unlinkedUsers = "";
