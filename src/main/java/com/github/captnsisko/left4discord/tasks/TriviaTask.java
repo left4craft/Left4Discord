@@ -1,4 +1,4 @@
-package com.github.captnsisko.left4discord;
+package com.github.captnsisko.left4discord.tasks;
 
 
 import java.awt.Color;
@@ -13,7 +13,7 @@ import java.util.Timer;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import org.javacord.api.entity.channel.ServerTextChannel;
+import org.javacord.api.entity.channel.TextChannel;
 import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.user.User;
@@ -23,6 +23,9 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.captnsisko.left4discord.commands.TriviaCommand;
+import com.github.captnsisko.left4discord.util.Constants;
+import com.github.captnsisko.left4discord.util.DatabaseManager;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import com.vdurmont.emoji.EmojiParser;
@@ -32,9 +35,9 @@ import redis.clients.jedis.Jedis;
 public class TriviaTask implements Runnable {
 	private boolean completed;
 	private User user;
-	private ServerTextChannel channel;
+	private TextChannel channel;
 
-	public TriviaTask(User user, ServerTextChannel channel) {
+	public TriviaTask(User user, TextChannel channel) {
 		this.user = user;
 		this.channel = channel;
 		completed = false;
@@ -65,7 +68,7 @@ public class TriviaTask implements Runnable {
 			//embed.addField("Instructions", "You have 30 seconds to answer the question by reacting with the correct letter choice");
 			embed.setAuthor(user);
 			embed.addField(question, answerStr);
-			embed.setFooter(Main.FOOTER_TEXT);
+			embed.setFooter(Constants.FOOTER_TEXT);
 			try {
 				Message msg = channel.sendMessage(embed).get();
 				String[] choices = {EmojiParser.parseToUnicode(":regional_indicator_symbol_a:"),
@@ -111,10 +114,10 @@ public class TriviaTask implements Runnable {
 									}
 									result.addField("Correct Answer", correct);
 									result.addField("Difficulty", difficulty);
-									result.setFooter(Main.FOOTER_TEXT);
+									result.setFooter(Constants.FOOTER_TEXT);
 									channel.sendMessage(result);
 									msg.removeAllReactions();
-									Main.removeTriviaUser(user.getId());
+									TriviaCommand.removeTriviaUser(user.getId());
 								}
 							}
 						}
@@ -136,7 +139,7 @@ public class TriviaTask implements Runnable {
 			EmbedBuilder embed = new EmbedBuilder();
 			embed.addField("Error", "Could not reach trivia server");
 			embed.setColor(new Color(200, 0, 0));
-			embed.setFooter(Main.FOOTER_TEXT);
+			embed.setFooter(Constants.FOOTER_TEXT);
 			channel.sendMessage(embed);
 		} 
 	}
@@ -151,14 +154,14 @@ public class TriviaTask implements Runnable {
 
 	private String reward(long id, String difficulty) {
 		try {
-			PreparedStatement statement = Main.getSQL().prepareStatement("SELECT HEX(UUID) FROM discord_users WHERE discordID = ?");
+			PreparedStatement statement = DatabaseManager.get().prepareStatement("SELECT HEX(UUID) FROM discord_users WHERE discordID = ?");
 			statement.setLong(1, id);
 			ResultSet r = statement.executeQuery();
 			if (r.next()) {
 				String uuid = r.getString(1);
 				uuid = uuid.toLowerCase();
 				uuid = new StringBuilder(uuid).insert(8, '-').insert(13, '-').insert(18, '-').insert(23, '-').toString();
-				statement = Main.getSQL().prepareStatement("SELECT name FROM litebans_history WHERE uuid=? ORDER BY date DESC;");
+				statement = DatabaseManager.get().prepareStatement("SELECT name FROM litebans_history WHERE uuid=? ORDER BY date DESC;");
 				statement.setString(1, uuid);
 				r = statement.executeQuery();
 				if (r.next()) {

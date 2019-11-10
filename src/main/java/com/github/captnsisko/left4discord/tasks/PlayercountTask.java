@@ -1,6 +1,8 @@
-package com.github.captnsisko.left4discord;
+package com.github.captnsisko.left4discord.tasks;
 
 import java.util.TimerTask;
+
+import com.github.captnsisko.left4discord.util.Constants;
 
 import org.javacord.api.DiscordApi;
 
@@ -21,7 +23,7 @@ public class PlayercountTask extends TimerTask {
 		if (!pList[0].isEmpty()) {
 			pCount = pList.length;
 		}
-		api.getChannelById(Main.MINECRAFTCHANNEL).get().asServerTextChannel().get().updateTopic("Chat with players who are in-game. Players online:  " + pCount);
+		api.getChannelById(Constants.MINECRAFTCHANNEL).get().asServerTextChannel().get().updateTopic("Chat with players who are in-game. Players online:  " + pCount);
 		j.close();
 
 	}

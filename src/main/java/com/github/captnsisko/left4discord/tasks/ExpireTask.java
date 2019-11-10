@@ -1,4 +1,4 @@
-package com.github.captnsisko.left4discord;
+package com.github.captnsisko.left4discord.tasks;
 
 import java.io.IOException;
 import java.util.ArrayList;
